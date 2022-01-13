@@ -15,7 +15,7 @@ pub struct MinMaxPicker {
 
 impl MinMaxPicker {
   pub fn new() -> Self {
-    // Don't bother initializing the set of possible answers until after we get the score for the
+    // Don't bother initializing the set of possible solutions until after we get the score for the
     // first guess, since we'll always make the same first guess.
     Self {
       possibilities: HashSet::new(),
@@ -27,7 +27,7 @@ impl MinMaxPicker {
 impl Picker for MinMaxPicker {
   fn next_guess(&self) -> Pins {
     if !self.initialized {
-      // Always the same first guess.
+      // Always the same first guess. Anything of the form "2 each of 2 colors" is optimal.
       return Pins::new(0, 0, 1, 1);
     }
 
@@ -35,24 +35,27 @@ impl Picker for MinMaxPicker {
       return *self.possibilities.iter().next().unwrap();
     }
 
-    let mut guess = Pins::new(0, 0, 0, 0);
+    let mut current_guess = Pins::new(0, 0, 0, 0);
 
     let mut max_min_eliminated = 0;
     let mut max_min_guesses: Vec<Pins> = Vec::new();
 
     // Out of all possible guesses, pick the one that will eliminate the most possibilities from
-    // the current set.
+    // the current set. We obviously don't know exactly how many each guess will eliminate, since
+    // we don't have its score. So we pick a guess that maximizes "minimum possibilites eliminated"
+    // over all scores. In other words, pick a guess that has the best worst-case performance.
     for _ in 0..TOTAL_CONFIGS {
-      guess.increment();
+      current_guess.increment();
 
-      // This guess will eliminate at least this many items from the possibilities set.
+      // This guess will eliminate at least this many items from the possibilities set, no matter
+      // what the score ends up being.
       let mut min_possibilities_eliminated = TOTAL_CONFIGS;
 
       for possible_score in ALL_SCORES {
         let mut eliminated_by_this_score = 0;
 
-        for possible_answer in self.possibilities.iter() {
-          if compute_score(guess, *possible_answer) != possible_score {
+        for possible_solution in self.possibilities.iter() {
+          if compute_score(current_guess, *possible_solution) != possible_score {
             eliminated_by_this_score += 1;
           }
         }
@@ -62,25 +65,27 @@ impl Picker for MinMaxPicker {
         }
       }
 
+      // Many guesses may have the same worst-case performance, and we'll want to choose from among
+      // them in a nontrivial way, so hold on to all of them.
       if min_possibilities_eliminated > max_min_eliminated {
         max_min_guesses.clear();
-        max_min_guesses.push(guess);
+        max_min_guesses.push(current_guess);
         max_min_eliminated = min_possibilities_eliminated;
       } else if min_possibilities_eliminated == max_min_eliminated {
-        max_min_guesses.push(guess);
+        max_min_guesses.push(current_guess);
       }
     }
 
-    // If any of the min-maxed guesses is a possible answer, use that.
-    for possible_answer in max_min_guesses.iter() {
-      if self.possibilities.contains(possible_answer) {
-        return *possible_answer;
+    // If any of the min-maxed guesses is a possible solution, use that.
+    for guess in max_min_guesses.iter() {
+      if self.possibilities.contains(guess) {
+        return *guess;
       }
     }
 
     // This is OK -- this guess won't win the game, but it will still give us the maximum amount
     // of new information.
-    println!("Guessing a non-possible answer");
+    println!("Guessing something that is not a possible solution");
     max_min_guesses[0]
   }
 
@@ -119,6 +124,6 @@ impl Picker for MinMaxPicker {
       }
     }
 
-    println!("{} possible answers left", self.possibilities.len());
+    println!("{} possible solutions left", self.possibilities.len());
   }
 }

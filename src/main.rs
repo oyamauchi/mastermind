@@ -104,7 +104,7 @@ fn main() {
       println!("Score: {:?}", score);
 
       if score == (4, 0) {
-        println!("win in {}!", guess_count);
+        println!("Win in {}!", guess_count);
         break;
       }
 
