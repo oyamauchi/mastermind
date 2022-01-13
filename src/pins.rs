@@ -3,13 +3,19 @@
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Pins(u16);
 
+// These two constants are tuneable, as long as PINS * BITS_PER_PIN <= 16. So you could have:
+// - 3 pins, <= 32 colors
+// - 4 pins, <= 16 colors
+// - 5 pins, <= 8 colors
+// - 6 pins, <= 4 colors
+//
+// If you want to go bigger, you could increase the size of Pins' inner number.
+pub const COLORS: u8 = 6;
 pub const PINS: u8 = 4;
-const BITS_PER_PIN: u8 = 3;
 
+const BITS_PER_PIN: u8 = 8 - (COLORS - 1).leading_zeros() as u8;
 const MASK_ONE: u16 = (1 << BITS_PER_PIN) - 1;
-const MASK_ALL: u16 = (1 << (PINS * BITS_PER_PIN)) - 1;
-pub const COLORS: u8 = 1 << BITS_PER_PIN;
-pub const TOTAL_CONFIGS: u16 = MASK_ALL + 1;
+pub const TOTAL_CONFIGS: usize = (COLORS as usize).pow(PINS as u32);
 
 /// The storage format is as follows:
 ///
@@ -31,7 +37,7 @@ impl Pins {
 
   pub fn set(&mut self, index: u8, new_mem: u8) -> &mut Self {
     debug_assert!(index < PINS);
-    debug_assert!(new_mem <= MASK_ONE as u8);
+    debug_assert!(new_mem <= COLORS);
     let shift_amount = index * BITS_PER_PIN;
     let mask = MASK_ONE << shift_amount;
     let deleted = self.0 & !mask;
@@ -40,7 +46,22 @@ impl Pins {
   }
 
   pub fn increment(&mut self) -> &mut Self {
-    self.0 = (self.0 + 1) & MASK_ALL;
+    // If COLORS is a power of 2, all of this can be replaced with one line:
+    //
+    //   self.0 = (self.0 + 1) & ((1 << (PINS * BITS_PER_PIN)) - 1);
+    //
+    // But it turns out that makes no discernible difference to performance. increment() is not on
+    // the hot path of MinMaxPicker::next_guess.
+
+    for i in 0..PINS {
+      let v = self.get(i);
+      if v < COLORS - 1 {
+        return self.set(i, v + 1);
+      } else {
+        self.set(i, 0);
+      }
+    }
+
     self
   }
 }
@@ -64,10 +85,10 @@ mod tests {
   fn increment() {
     let mut p = *Pins::new(0, 0, 0, 0).increment();
     assert_eq!(Pins::new(1, 0, 0, 0), p);
-    p.set(0, 7).increment();
+    p.set(0, COLORS - 1).increment();
     assert_eq!(Pins::new(0, 1, 0, 0), p);
 
-    p = *Pins::new(7, 7, 7, 7).increment();
+    p = *Pins::new(COLORS - 1, COLORS - 1, COLORS - 1, COLORS - 1).increment();
     assert_eq!(Pins::new(0, 0, 0, 0), p);
   }
 }

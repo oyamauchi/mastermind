@@ -101,8 +101,7 @@ impl Picker for MinMaxPicker {
           continue;
         }
 
-        let score_this = compute_score(pins, guess);
-        if score_this == score {
+        if compute_score(pins, guess) == score {
           self.possibilities.insert(pins);
         }
       }

@@ -37,11 +37,12 @@ pub fn compute_score(attempt: Pins, actual: Pins) -> Score {
   let mut black = 0;
 
   for i in 0..PINS {
-    if attempt.get(i) == actual.get(i) {
+    let (att, act) = (attempt.get(i), actual.get(i));
+    if att == act {
       black += 1;
     } else {
-      att_counts[attempt.get(i) as usize] += 1;
-      actual_counts[actual.get(i) as usize] += 1;
+      att_counts[att as usize] += 1;
+      actual_counts[act as usize] += 1;
     }
   }
 
@@ -52,34 +53,6 @@ pub fn compute_score(attempt: Pins, actual: Pins) -> Score {
   }
 
   (black, white)
-}
-
-pub fn is_score(attempt: Pins, actual: Pins, score: Score) -> bool {
-  let mut black = 0;
-
-  let mut att_counts = [0_u8; COLORS as usize];
-  let mut actual_counts = [0_u8; COLORS as usize];
-
-  for i in 0..PINS {
-    if attempt.get(i) == actual.get(i) {
-      black += 1;
-    } else {
-      att_counts[attempt.get(i) as usize] += 1;
-      actual_counts[actual.get(i) as usize] += 1;
-    }
-  }
-
-  if black != score.0 {
-    return false;
-  }
-
-  let mut white = 0;
-
-  for i in 0..att_counts.len() {
-    white += min!(att_counts[i], actual_counts[i]);
-  }
-
-  white == score.1
 }
 
 #[cfg(test)]
@@ -110,22 +83,22 @@ mod tests {
     );
   }
 
-  #[test]
-  fn is() {
-    assert!(is_score(
-      Pins::new(0, 1, 2, 3),
-      Pins::new(0, 1, 2, 3),
-      (4, 0)
-    ));
-    assert!(!is_score(
-      Pins::new(0, 1, 2, 3),
-      Pins::new(0, 1, 2, 3),
-      (3, 0)
-    ));
-    assert!(is_score(
-      Pins::new(0, 0, 0, 1),
-      Pins::new(0, 1, 0, 3),
-      (2, 1)
-    ));
-  }
+  // #[test]
+  // fn is() {
+  //   assert!(is_score(
+  //     Pins::new(0, 1, 2, 3),
+  //     Pins::new(0, 1, 2, 3),
+  //     (4, 0)
+  //   ));
+  //   assert!(!is_score(
+  //     Pins::new(0, 1, 2, 3),
+  //     Pins::new(0, 1, 2, 3),
+  //     (3, 0)
+  //   ));
+  //   assert!(is_score(
+  //     Pins::new(0, 0, 0, 1),
+  //     Pins::new(0, 1, 0, 3),
+  //     (2, 1)
+  //   ));
+  // }
 }

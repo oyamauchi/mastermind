@@ -9,7 +9,7 @@ use argparse::{ArgumentParser, Store, StoreTrue};
 use random::Source;
 
 use crate::picker::{MinMaxPicker, Picker};
-use crate::pins::Pins;
+use crate::pins::{Pins, COLORS};
 use crate::score::compute_score;
 use crate::score::Score;
 
@@ -84,10 +84,10 @@ fn main() {
     let mut guess_count = 0;
     let answer = match rng {
       Some(ref mut r) => Some(Pins::new(
-        r.read::<u8>() % 8,
-        r.read::<u8>() % 8,
-        r.read::<u8>() % 8,
-        r.read::<u8>() % 8,
+        r.read::<u8>() % COLORS,
+        r.read::<u8>() % COLORS,
+        r.read::<u8>() % COLORS,
+        r.read::<u8>() % COLORS,
       )),
       None => None,
     };
