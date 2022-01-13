@@ -1,29 +1,36 @@
-/// A configuration of four pins, each of which can be one of six colors, can be represented with
-/// 12 bits.
-#[derive(Copy, Clone, Hash, PartialEq, Eq)]
-pub struct Pins(u16);
-
 // These two constants are tuneable, as long as PINS * BITS_PER_PIN <= 16. So you could have:
+//
 // - 3 pins, <= 32 colors
 // - 4 pins, <= 16 colors
 // - 5 pins, <= 8 colors
 // - 6 pins, <= 4 colors
 //
-// If you want to go bigger, you could increase the size of Pins' inner number.
+// If you wanted to go bigger, you would increase the size of Pins' inner number.
 pub const COLORS: u8 = 8;
 pub const PINS: u8 = 4;
 
+// Constants derived from the two above.
 const BITS_PER_PIN: u8 = 8 - (COLORS - 1).leading_zeros() as u8;
 const MASK_ONE: u16 = (1 << BITS_PER_PIN) - 1;
-pub const TOTAL_CONFIGS: usize = (COLORS as usize).pow(PINS as u32);
+pub const TOTAL_CONFIGS: u16 = (COLORS as u16).pow(PINS as u32);
 
+/// Represent the state of [PINS] pins in a small number of bits so it can be held in a register.
 /// The storage format is as follows:
 ///
 /// ```
-/// |<--BITS_PER_PIN-->|<--BITS_PER_PIN-->|...|<--BITS_PER_PIN-->|
-/// |     index 0      |     index 1      |...|   index PINS-1   |
-/// least significant                             most significant
+/// |<--BITS_PER_PIN-->|...|<--BITS_PER_PIN-->|<--BITS_PER_PIN-->|
+/// |   index PINS-1   |...|     index 1      |     index 0      |
+/// most significant                             least significant
 /// ```
+///
+/// Each pin gets its own disjoint sequence of bits within the larger number, so that it's easily
+/// extractable with bitwise ops. You could represent the state with fewer total bits if the number
+/// of colors isn't a power of 2. (E.g. 4 pins x 6 colors is 1296 total configurations,
+/// representable in 11 bits.) But then extracting the values of individual pins would require
+/// slower math, and that's the hottest code in the algorithm.
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+pub struct Pins(u16);
+
 impl Pins {
   pub fn new(a: u8, b: u8, c: u8, d: u8) -> Pins {
     *Pins(0).set(0, a).set(1, b).set(2, c).set(3, d)
