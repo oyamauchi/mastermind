@@ -10,7 +10,7 @@ pub struct Pins(u16);
 // - 6 pins, <= 4 colors
 //
 // If you want to go bigger, you could increase the size of Pins' inner number.
-pub const COLORS: u8 = 6;
+pub const COLORS: u8 = 8;
 pub const PINS: u8 = 4;
 
 const BITS_PER_PIN: u8 = 8 - (COLORS - 1).leading_zeros() as u8;
